@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR 診斷工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid #4facfe;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .error {
+            border-left-color: #ff6b6b;
+            background: #fff5f5;
+        }
+
+        .success {
+            border-left-color: #51cf66;
+            background: #f4fce3;
+        }
+
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.05);
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4facfe;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.ok {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 OCR 診斷工具</h1>
+            <p>測試和診斷 OCR API 功能</p>
+        </div>
+
+        <div class="content">
+            <!-- 服務狀態檢查 -->
+            <div class="section">
+                <h2>🔍 服務狀態檢查</h2>
+                <button class="btn" onclick="checkServiceStatus()">檢查服務狀態</button>
+                <button class="btn" onclick="getDiagnostics()">取得診斷資訊</button>
+                <button class="btn" onclick="testOcrFunctionality()">測試OCR功能</button>
+                <div id="statusResult"></div>
+            </div>
+
+            <!-- 基本 OCR 測試 -->
+            <div class="section">
+                <h2>📷 基本 OCR 測試</h2>
+                <div class="file-upload" onclick="document.getElementById('basicFile').click()">
+                    <div>📤 點擊上傳圖片進行基本 OCR 測試</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                        支援: JPG, PNG, GIF, BMP, TIFF
+                    </div>
+                    <input type="file" id="basicFile" accept="image/*" onchange="handleBasicFileSelect()">
+                </div>
+                <button class="btn" onclick="testBasicOcr()" id="basicOcrBtn" disabled>開始基本 OCR 測試</button>
+                <div id="basicResult"></div>
+            </div>
+
+            <!-- 語言指定 OCR 測試 -->
+            <div class="section">
+                <h2>🌍 語言指定 OCR 測試</h2>
+                <div class="file-upload" onclick="document.getElementById('advancedFile').click()">
+                    <div>📤 點擊上傳圖片進行語言指定 OCR 測試</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                        支援: JPG, PNG, GIF, BMP, TIFF
+                    </div>
+                    <input type="file" id="advancedFile" accept="image/*" onchange="handleAdvancedFileSelect()">
+                </div>
+                <div style="margin: 15px 0;">
+                    <label for="languageSelect">選擇語言:</label>
+                    <select id="languageSelect" style="margin-left: 10px; padding: 8px; border-radius: 5px;">
+                        <option value="eng">English</option>
+                        <option value="chi_tra">繁體中文</option>
+                        <option value="chi_sim">簡體中文</option>
+                        <option value="jpn">日本語</option>
+                        <option value="kor">한국어</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="testAdvancedOcr()" id="advancedOcrBtn" disabled>開始語言指定 OCR 測試</button>
+                <div id="advancedResult"></div>
+            </div>
+
+            <!-- 錯誤診斷 -->
+            <div class="section">
+                <h2>🚨 常見問題診斷</h2>
+                <button class="btn" onclick="checkCommonIssues()">檢查常見問題</button>
+                <div id="issuesResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5262/api/ocr';
+        let selectedBasicFile = null;
+        let selectedAdvancedFile = null;
+
+        // 檢查服務狀態
+        async function checkServiceStatus() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div>檢查中...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/test`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="status ok">
+                            ✅ 服務正常運行<br>
+                            時間: ${new Date(data.timestamp).toLocaleString()}<br>
+                            版本: ${data.version}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="status error">
+                            ❌ 服務異常<br>
+                            錯誤: ${data.error || '未知錯誤'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ 無法連接到服務<br>
+                        錯誤: ${error.message}<br>
+                        請確認服務是否正在運行
+                    </div>
+                `;
+            }
+        }
+
+        // 取得診斷資訊
+        async function getDiagnostics() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div>取得診斷資訊中...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/diagnostics`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    let html = '<div class="status ok">✅ 診斷資訊</div>';
+                    html += '<div class="result">';
+                    html += `狀態: ${data.status}\n`;
+                    html += `Tessdata 路徑: ${data.tessdataPath}\n`;
+                    html += `Tessdata 存在: ${data.tessdataExists}\n`;
+                    html += `可用語言: ${data.availableLanguages.join(', ')}\n`;
+                    html += `語言檔案:\n`;
+                    data.languageFiles.forEach(lang => {
+                        html += `  ${lang.language}: ${lang.fileExists ? '✅' : '❌'} (${lang.filePath})\n`;
+                    });
+                    html += `伺服器時間: ${new Date(data.serverTime).toLocaleString()}`;
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="status error">
+                            ❌ 診斷失敗<br>
+                            錯誤: ${data.error || '未知錯誤'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ 無法取得診斷資訊<br>
+                        錯誤: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 處理基本檔案選擇
+        function handleBasicFileSelect() {
+            const file = document.getElementById('basicFile').files[0];
+            if (file) {
+                selectedBasicFile = file;
+                document.getElementById('basicOcrBtn').disabled = false;
+                console.log('選擇基本檔案:', file.name, file.size, 'bytes');
+            }
+        }
+
+        // 處理進階檔案選擇
+        function handleAdvancedFileSelect() {
+            const file = document.getElementById('advancedFile').files[0];
+            if (file) {
+                selectedAdvancedFile = file;
+                document.getElementById('advancedOcrBtn').disabled = false;
+                console.log('選擇進階檔案:', file.name, file.size, 'bytes');
+            }
+        }
+
+        // 測試基本 OCR
+        async function testBasicOcr() {
+            if (!selectedBasicFile) {
+                alert('請先選擇檔案');
+                return;
+            }
+
+            const resultDiv = document.getElementById('basicResult');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div>處理中...</div>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedBasicFile);
+                
+                const response = await fetch(`${API_BASE}/extract-text`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ OCR 處理成功</div>
+                        <div class="result">
+檔案名稱: ${data.fileName}
+檔案大小: ${data.fileSize} bytes
+處理時間: ${new Date(data.processedAt).toLocaleString()}
+識別文字長度: ${data.text?.length || 0} 字元
+
+識別結果:
+${data.text || '未識別到文字'}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="status error">❌ OCR 處理失敗</div>
+                        <div class="result error">
+錯誤代碼: ${data.code}
+錯誤訊息: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">❌ 處理失敗</div>
+                    <div class="result error">
+錯誤: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 測試進階 OCR
+        async function testAdvancedOcr() {
+            if (!selectedAdvancedFile) {
+                alert('請先選擇檔案');
+                return;
+            }
+
+            const language = document.getElementById('languageSelect').value;
+            const resultDiv = document.getElementById('advancedResult');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div>處理中...</div>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedAdvancedFile);
+                formData.append('language', language);
+                
+                const response = await fetch(`${API_BASE}/extract-text-with-language`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ OCR 處理成功</div>
+                        <div class="result">
+檔案名稱: ${data.fileName}
+檔案大小: ${data.fileSize} bytes
+使用語言: ${data.language}
+處理時間: ${new Date(data.processedAt).toLocaleString()}
+識別文字長度: ${data.text?.length || 0} 字元
+
+識別結果:
+${data.text || '未識別到文字'}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="status error">❌ OCR 處理失敗</div>
+                        <div class="result error">
+錯誤代碼: ${data.code}
+錯誤訊息: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">❌ 處理失敗</div>
+                    <div class="result error">
+錯誤: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 測試OCR功能
+        async function testOcrFunctionality() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div>測試OCR功能中...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/test-ocr`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="status ok">✅ OCR功能測試</div>
+                        <div class="result">
+${data.message}
+時間: ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="status error">❌ OCR功能測試失敗</div>
+                        <div class="result error">
+錯誤代碼: ${data.code}
+錯誤訊息: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">❌ OCR功能測試失敗</div>
+                    <div class="result error">
+錯誤: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 檢查常見問題
+        function checkCommonIssues() {
+            const resultDiv = document.getElementById('issuesResult');
+            let html = '<div class="status warning">⚠️ 常見問題檢查</div>';
+            html += '<div class="result">';
+            
+            // 檢查 API 端點
+            html += '1. API 端點檢查:\n';
+            html += `   - 基本 OCR: ${API_BASE}/extract-text\n`;
+            html += `   - 語言指定 OCR: ${API_BASE}/extract-text-with-language\n`;
+            html += `   - 診斷端點: ${API_BASE}/diagnostics\n`;
+            html += `   - 測試端點: ${API_BASE}/test\n`;
+            html += `   - OCR測試端點: ${API_BASE}/test-ocr\n\n`;
+            
+            // 檢查檔案格式
+            html += '2. 支援的檔案格式:\n';
+            html += '   - JPG, JPEG, PNG, GIF, BMP, TIFF\n';
+            html += '   - 最大檔案大小: 10MB\n';
+            html += '   - 建議解析度: 300 DPI 或以上\n\n';
+            
+            // 檢查語言包
+            html += '3. 語言包檢查:\n';
+            html += '   - 確認 tessdata 資料夾存在\n';
+            html += '   - 確認語言檔案 (.traineddata) 存在\n';
+            html += '   - 支援語言: eng, chi_tra, chi_sim, jpn, kor\n\n';
+            
+            // 常見錯誤
+            html += '4. 常見錯誤解決方案:\n';
+            html += '   - 檔案格式不支援: 請使用支援的圖片格式\n';
+            html += '   - 檔案太大: 請壓縮圖片或使用較小的檔案\n';
+            html += '   - 語言包不存在: 請確認語言檔案已正確安裝\n';
+            html += '   - 服務未啟動: 請確認 API 服務正在運行\n';
+            html += '   - 網路連線問題: 請檢查網路連線和防火牆設定\n';
+            html += '   - 圖片品質問題: 確保圖片清晰、對比度高\n';
+            html += '   - 字符識別問題: 移除字符白名單限制\n';
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        // 頁面載入時自動檢查服務狀態
+        window.addEventListener('load', function() {
+            checkServiceStatus();
+        });
+    </script>
+</body>
+</html> 
