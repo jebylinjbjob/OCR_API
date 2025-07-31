@@ -1,1 +1,15 @@
-.bin/
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+*.log
+packages/
+node_modules/
+.env
+appsettings.Development.json
+tessdata/
