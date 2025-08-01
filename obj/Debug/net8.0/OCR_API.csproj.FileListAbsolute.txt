@@ -38,4 +38,4 @@ C:\Users\jebylin\source\repos\OCR_API\OCR_API\obj\Debug\net8.0\OCR_API.pdb
 C:\Users\jebylin\source\repos\OCR_API\OCR_API\obj\Debug\net8.0\OCR_API.genruntimeconfig.cache
 C:\Users\jebylin\source\repos\OCR_API\OCR_API\obj\Debug\net8.0\ref\OCR_API.dll
 C:\Users\jebylin\source\repos\OCR_API\OCR_API\bin\Debug\net8.0\OCR_API.staticwebassets.runtime.json
-C:\Users\jebylin\source\repos\OCR_API\OCR_API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\jebylin\source\repos\OCR_API\OCR_API\obj\Debug\net8.0\OCR_API.sourcelink.json
