@@ -1,5 +1,6 @@
 .vscode/
 .bin/
+bin/
 .idea/
 obj/
 .vs/
@@ -15,3 +16,5 @@ node_modules/
 .env
 appsettings.Development.json
 tessdata/
+/bin/Debug
+bin/Debug/net8.0/OCR_API.exe
