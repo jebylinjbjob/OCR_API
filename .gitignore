@@ -1,4 +1,6 @@
-bin/
+.vscode/
+.bin/
+.idea/
 obj/
 .vs/
 *.user
